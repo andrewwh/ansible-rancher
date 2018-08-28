@@ -34,9 +34,9 @@
     body_format: json
     body:
       currentPassword: "admin"
-      newPassword: "admin"
+      newPassword: "{{rancher_master.password}}"
     headers:
-      Authorization: Bearer {{login.token}}
+      Authorization: Bearer {{login.json.token}}
     validate_certs: no
     status_code: 
       - 200
@@ -56,7 +56,7 @@
       description: "automation"
       name: ""
     headers:
-      Authorization: Bearer {{login.token}}      
+      Authorization: Bearer {{login.json.token}}      
     validate_certs: no
     status_code: 
       - 200
@@ -75,7 +75,7 @@
       name: "server-url"
       value: "{{rancher_master.url}}"
     headers:
-      Authorization: Bearer {{token.token}}      
+      Authorization: Bearer {{token.json.token}}      
     validate_certs: no
     status_code: 
       - 200
@@ -121,7 +121,7 @@
               election-timeout: 5000
       name": "{{rancher_master.cluster.name}}"
     headers:
-      Authorization: Bearer {{token.token}}      
+      Authorization: Bearer {{token.json.token}}      
     validate_certs: no
     status_code: 
       - 200
@@ -140,7 +140,7 @@
       type: "clusterRegistrationToken"
       clusterId: "{{cluster.id}}"
     headers:
-      Authorization: Bearer {{token.token}}      
+      Authorization: Bearer {{token.json.token}}      
     validate_certs: no
     status_code: 
       - 200
