@@ -1,0 +1,155 @@
+# Bootstrap a default cluster
+
+- name: wait for master to be available
+  uri:
+    url: "https://localhost/ping"
+    status_code: 200
+    timeout: 300
+    retries: 10
+    delay: 10
+    changed_when: false    
+    validate_certs: no
+  register: wait
+
+- name: login to master with default password
+  uri:
+    url: "https://localhost/v3-public/localProviders/local?action=login"   
+    method: POST
+    body_format: json
+    body:
+      username: admin
+      password: admin
+    validate_certs: no
+    status_code: 
+      - 200
+      - 201
+    return_content: yes
+    creates: /var/local/ansible/bootstrap.done
+  register: login
+
+- name: change default password
+  uri:
+    url: "https://localhost/v3/users?action=changepassword"   
+    method: POST
+    body_format: json
+    body:
+      currentPassword: "admin"
+      newPassword: "admin"
+    headers:
+      Authorization: Bearer {{login.token}}
+    validate_certs: no
+    status_code: 
+      - 200
+      - 201
+    return_content: no
+    creates: /var/local/ansible/bootstrap.done
+  register: password
+  when: login is succeeded
+
+- name: create api token
+  uri:
+    url: "https://localhost/token"   
+    method: POST
+    body_format: json
+    body:
+      type: "token"
+      description: "automation"
+      name: ""
+    headers:
+      Authorization: Bearer {{login.token}}      
+    validate_certs: no
+    status_code: 
+      - 200
+      - 201
+    return_content: yes
+    creates: /var/local/ansible/bootstrap.done
+  register: token
+  when: password is succeeded
+
+- name: configure server url
+  uri:
+    url: "https://localhost/v3/settings/server-url"   
+    method: POST
+    body_format: json
+    body:
+      name: "server-url"
+      value: "{{rancher_master.url}}"
+    headers:
+      Authorization: Bearer {{token.token}}      
+    validate_certs: no
+    status_code: 
+      - 200
+      - 201
+    return_content: no
+    creates: /var/local/ansible/bootstrap.done
+  register: url
+  when: token is succeeded
+
+- name: create cluster
+  uri:
+    url: "https://localhost/v3/cluster"   
+    method: POST
+    body_format: json
+    body:
+      type: "cluster"
+      rancherKubernetesEngineConfig:
+        ignoreDockerVersion: false
+        sshAgentAuth: false
+        type: "rancherKubernetesEngineConfig"
+        kubernetesVersion: "v1.10.1-rancher1"
+        authentication:
+          type: "authnConfig"
+          strategy: "x509"
+        network: 
+          type: "networkConfig"
+          plugin: "flannel"
+          flannelNetworkProvider:
+            iface: "eth1"
+          calicoNetworkProvider: null
+        ingress: 
+          type: ingressConfig
+          provider: "nginx"
+        services: 
+          type: "rkeConfigServices"
+          kubeApi:
+            podSecurityPolicy: false
+            type: "kubeAPIService"
+          etcd: 
+            type: "etcdService"
+            extraArgs:
+              heartbeat-interval: 500
+              election-timeout: 5000
+      name": "{{rancher_master.cluster.name}}"
+    headers:
+      Authorization: Bearer {{token.token}}      
+    validate_certs: no
+    status_code: 
+      - 200
+      - 201
+    return_content: yes
+    creates: /var/local/ansible/bootstrap.done    
+  register: cluster    
+  when: url is succeeded
+
+- name: create cluster registration token
+  uri:
+    url: "https://localhost/v3/clusterregistrationtoken"   
+    method: POST
+    body_format: json
+    body:
+      type: "clusterRegistrationToken"
+      clusterId: "{{cluster.id}}"
+    headers:
+      Authorization: Bearer {{token.token}}      
+    validate_certs: no
+    status_code: 
+      - 200
+      - 201
+    return_content: yes
+    creates: /var/local/ansible/bootstrap.done
+  register: register
+  when: cluster is succeded
+
+- name: create a step marker for bootstrap
+  file: path=/var/local/ansible/bootstrap.done state=touch
+  when: register is succeeded

@@ -1,0 +1,5 @@
+docker:
+  name: "docker-ce"
+  version: "17.03.0-ce"
+  repository: https://download.docker.com/linux/centos/7/$basearch/stable
+  gpg: https://download.docker.com/linux/centos/gpg

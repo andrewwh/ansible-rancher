@@ -1,0 +1,17 @@
+- name: copy selinux configuration
+  copy:
+    src: roles/common/templates/selinux
+    dest: /etc/sysconfig/
+  register: selinux
+
+# This only works where ansible is running remote to the server
+- name: reboot as selinux has changed
+  shell: sleep 2 && reboot
+  async: 1
+  poll: 0
+  when: selinux is changed
+  ignore_errors: true
+  
+- name: pause for reboot
+  pause: seconds=60
+  when: selinux.changed

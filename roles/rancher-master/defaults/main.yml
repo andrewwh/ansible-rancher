@@ -1,0 +1,8 @@
+rancher_master:
+  cluster: 
+    name: quickstart
+  password: rancher
+  url: https://192.168.168.100
+  docker:
+    name: rancher/rancher
+    version: latest

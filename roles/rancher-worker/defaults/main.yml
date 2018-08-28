@@ -1,0 +1,9 @@
+rancher_worker:
+  docker:
+    name: rancher/rancher-agent
+    version: v2.0.8
+  master:
+    url: https://192.168.168.100
+    user: admin
+    password: rancher
+    cluster: quickstart

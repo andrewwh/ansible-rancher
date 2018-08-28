@@ -1,0 +1,64 @@
+- include: firewall.yml
+
+- name: check if agent is running
+  shell: docker ps | grep '{{rancher_worker.docker.name}}'
+  register: agent
+  ignore_errors: true            
+  failed_when:
+    - false
+    
+- name: wait for master to be available
+  uri:
+    url: "{{rancher_worker.master.url}}/ping"
+    status_code: 200
+    timeout: 300
+    retries: 50
+    delay: 10
+    changed_when: false    
+    validate_certs: no
+  register: wait
+  when: agent is succeeded
+
+- name: login to master with user id and password
+  uri:
+    url: "{{rancher_worker.master.url}}/v3-public/localProviders/local?action=login"   
+    method: POST
+    body_format: json
+    body:
+      username: "{{rancher_worker.master.user}}"
+      password: "{{rancher_worker.master.password}}"
+    validate_certs: no
+    status_code: 200
+    return_content: yes
+  register: login
+  when: wait is succeeded
+
+- name: get cluster information
+  uri:
+    url: "{{rancher_worker.master.url}}/v3/clusters?name={{rancher_worker.master.cluster}}"   
+    method: GET
+    headers:
+      Authorization: Bearer {{login.token}}
+      Content-Type: application/json
+    validate_certs: no
+    status_code: 200
+    return_content: yes
+  register: cluster
+  when: login is succeeded
+
+- name: get agent command
+  uri:
+    url: "{{rancher_worker.master.url}}/v3/clusterregistrationtoken?id={{cluster.data[0].id}}"   
+    method: GET
+    headers:
+      Authorization: Bearer {{login.token}}
+      Content-Type: application/json
+    validate_certs: no
+    status_code: 200
+    return_content: yes
+  register: cmd
+  when: cluster is succeeded
+
+- name: start rancher worker agent
+  command: "{{cmd.data[0].nodeCommand}} --etcd --controlplane --worker --internal-address {{ ansible_eth1.ipv4.address }} --address {{ ansible_eth1.ipv4.address }}"
+  when: cmd is succeeded

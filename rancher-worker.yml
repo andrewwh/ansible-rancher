@@ -1,0 +1,11 @@
+#
+# Build rancher worker
+#
+---
+- hosts: rancher-worker
+  remote_user: root
+  become: yes
+  roles:
+    - common
+    - docker
+    - rancher-worker

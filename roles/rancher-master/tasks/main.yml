@@ -1,0 +1,15 @@
+- include: firewall.yml
+
+- name: start rancher server
+  docker_container:
+    name: rancher-master
+    image: "{{rancher_master.docker.name}}:{{rancher_master.docker.version}}"
+    state: started
+    restart_policy: always
+    volumes:
+      - /var/lib/rancher:/var/lib/rancher  
+    ports:
+      - "80:80"
+      - "443:443"
+
+- include: bootstrap.yml

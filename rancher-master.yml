@@ -1,0 +1,12 @@
+#
+# Build rancher master
+#
+---
+- hosts: rancher-master
+  become: yes
+  serial: 1
+  roles:
+    - common
+    - docker
+    - rancher-master
+#    - rancher-worker    

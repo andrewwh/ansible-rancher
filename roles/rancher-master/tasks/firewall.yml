@@ -1,0 +1,17 @@
+- name: allow incomming traffic to http port
+  firewalld:
+    port: 80/tcp
+    permanent: true
+    state: enabled
+
+- name: allow incomming traffic to https port
+  firewalld:
+    port: 443/tcp
+    permanent: true
+    state: enabled    
+    
+- name: allow incomming traffic to kupe-api
+  firewalld:
+    port: 6443/tcp
+    permanent: true
+    state: enabled

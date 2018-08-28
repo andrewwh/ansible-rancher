@@ -1,0 +1,35 @@
+- name: docker prerequisites
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+    - python-pip
+
+- name: install docker support for ansible
+  pip:
+    name: docker-py    
+
+- name: add docker repository
+  yum_repository:
+    name: docker-stable
+    description: docker stable repository
+    baseurl: "{{docker.repository}}"
+    enabled: yes
+    gpgcheck: yes
+    gpgkey: "{{docker.gpg}}"
+  notify: "update packages"
+
+- name: install docker
+  yum:
+    name: "{{docker.name}}"
+    state: present
+    update_cache: yes       
+    
+- name: start docker deamon
+  service:
+    name: docker
+    state: started
+    enabled: yes

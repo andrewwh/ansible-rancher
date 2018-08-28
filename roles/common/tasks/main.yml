@@ -1,0 +1,35 @@
+- include: selinux.yml
+- include: network.yml
+- name: increase the number of semaphores due to docker bug with device mapper
+  copy:
+    src: roles/common/templates/99-kernelsem.conf
+    dest: /etc/sysctl.d/
+
+- name: reconfigure system with new semaphore values
+  shell: sysctl --system    
+
+- name: yum update
+  yum:
+    name: '*'
+    state: latest
+    creates: /var/local/ansible/update.done
+  ignore_errors: yes
+  register: update
+
+- name: create a step marker for yum update
+  file: path=/var/local/ansible/update.done state=touch
+  when: update is succeeded
+  
+- name: install epel
+  yum:
+    name: epel-release
+    state: latest
+
+- name: install base tools
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - jq
+    - net-tools
+    

@@ -1,0 +1,13 @@
+- name: allow networking through docker0
+  firewalld:
+    zone: trusted
+    interface: docker0
+    permanent: true
+    state: enabled
+    
+- name: trust all traffic on the docker network
+  firewalld:
+    source: 172.17.0.0/16
+    zone: internal
+    state: enabled
+    
